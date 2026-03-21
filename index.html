@@ -227,6 +227,129 @@
                     </div>
                 </div>
             </div>
+
+            <!-- 所有店家列表 -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h2 class="section-title">🏪 所有店家列表</h2>
+                    <div class="stat-card">
+                        <div class="mb-3">
+                            <button class="btn btn-primary btn-sm me-2 filter-btn active" data-filter="all">全部</button>
+                            <button class="btn btn-outline-primary btn-sm me-2 filter-btn" data-filter="營運中">營運中</button>
+                            <button class="btn btn-outline-primary btn-sm me-2 filter-btn" data-filter="籌備中">籌備中</button>
+                            <button class="btn btn-outline-primary btn-sm filter-btn" data-filter="已簽約">已簽約</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="storesTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>店名</th>
+                                        <th>品牌</th>
+                                        <th>狀態</th>
+                                        <th>階段</th>
+                                        <th>進度</th>
+                                        <th>負責人</th>
+                                        <th>簽約日</th>
+                                        <th>預計開幕</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="storesTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 潛在客戶列表 -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h2 class="section-title">👥 潛在客戶列表</h2>
+                    <div class="stat-card">
+                        <div class="mb-3">
+                            <button class="btn btn-primary btn-sm me-2 customer-filter-btn active" data-filter="all">全部</button>
+                            <button class="btn btn-outline-primary btn-sm me-2 customer-filter-btn" data-filter="接近成交">接近成交</button>
+                            <button class="btn btn-outline-primary btn-sm me-2 customer-filter-btn" data-filter="有意願">有意願</button>
+                            <button class="btn btn-outline-primary btn-sm customer-filter-btn" data-filter="新詢問">新詢問</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="customersTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>客戶名稱</th>
+                                        <th>聯絡人</th>
+                                        <th>電話</th>
+                                        <th>地區</th>
+                                        <th>階段</th>
+                                        <th>負責人</th>
+                                        <th>最後聯絡</th>
+                                        <th>備註</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="customersTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 場地開發列表 -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h2 class="section-title">📍 場地開發列表</h2>
+                    <div class="stat-card">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>場地名稱</th>
+                                        <th>地址</th>
+                                        <th>坪數</th>
+                                        <th>租金</th>
+                                        <th>屋主</th>
+                                        <th>電話</th>
+                                        <th>狀態</th>
+                                        <th>負責人</th>
+                                        <th>開發日期</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="sitesTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 待辦事項列表 -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h2 class="section-title">✅ 待辦事項列表</h2>
+                    <div class="stat-card">
+                        <div class="mb-3">
+                            <button class="btn btn-primary btn-sm me-2 task-filter-btn active" data-filter="all">全部</button>
+                            <button class="btn btn-outline-danger btn-sm me-2 task-filter-btn" data-filter="待處理">待處理</button>
+                            <button class="btn btn-outline-warning btn-sm me-2 task-filter-btn" data-filter="進行中">進行中</button>
+                            <button class="btn btn-outline-success btn-sm task-filter-btn" data-filter="已完成">已完成</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="tasksTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>任務名稱</th>
+                                        <th>類型</th>
+                                        <th>關聯店家/客戶</th>
+                                        <th>負責人</th>
+                                        <th>期限</th>
+                                        <th>狀態</th>
+                                        <th>優先級</th>
+                                        <th>備註</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tasksTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -271,10 +394,19 @@
                 renderPreparingStores(stores);
                 renderOverdueTasks(tasks);
                 renderNewStores(stores);
+                
+                // 渲染詳細列表
+                renderStoresTable(stores);
+                renderCustomersTable(customers);
+                renderSitesTable(sites);
+                renderTasksTable(tasks);
 
                 // 顯示儀表板
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('dashboard').style.display = 'block';
+                
+                // 設定篩選按鈕
+                setupFilters(stores, customers, tasks);
             } catch (error) {
                 console.error('載入資料失敗:', error);
                 document.getElementById('loading').innerHTML = `
@@ -552,6 +684,236 @@
             if (progress >= 0.8) return 'bg-success';
             if (progress >= 0.5) return 'bg-warning';
             return 'bg-danger';
+        }
+
+        // 渲染所有店家表格
+        function renderStoresTable(stores) {
+            const tbody = document.getElementById('storesTableBody');
+            const html = stores.map(store => {
+                const statusBadge = getStatusBadge(store['狀態']);
+                const progress = parseFloat(store['進度%']) || 0;
+                
+                return `
+                    <tr data-status="${store['狀態']}">
+                        <td><strong>${store['店名']}</strong></td>
+                        <td><span class="badge bg-info">${store['品牌']}</span></td>
+                        <td>${statusBadge}</td>
+                        <td>${store['階段']}</td>
+                        <td>
+                            <div class="progress" style="height: 20px; min-width: 80px;">
+                                <div class="progress-bar ${getProgressColor(progress / 100)}" 
+                                     style="width: ${progress}%">${progress}%</div>
+                            </div>
+                        </td>
+                        <td>${store['負責人']}</td>
+                        <td>${store['簽約日']}</td>
+                        <td>${store['預計開幕日']}</td>
+                    </tr>
+                `;
+            }).join('');
+            
+            tbody.innerHTML = html;
+        }
+
+        // 渲染潛在客戶表格
+        function renderCustomersTable(customers) {
+            const tbody = document.getElementById('customersTableBody');
+            const html = customers.map(customer => {
+                const stageBadge = getStageBadge(customer['階段']);
+                
+                return `
+                    <tr data-stage="${customer['階段']}">
+                        <td><strong>${customer['客戶名稱']}</strong></td>
+                        <td>${customer['聯絡人']}</td>
+                        <td><a href="tel:${customer['電話']}">${customer['電話']}</a></td>
+                        <td>${customer['地區']}</td>
+                        <td>${stageBadge}</td>
+                        <td>${customer['負責人']}</td>
+                        <td>${customer['最後聯絡日']}</td>
+                        <td>${customer['備註']}</td>
+                    </tr>
+                `;
+            }).join('');
+            
+            tbody.innerHTML = html;
+        }
+
+        // 渲染場地開發表格
+        function renderSitesTable(sites) {
+            const tbody = document.getElementById('sitesTableBody');
+            const html = sites.map(site => {
+                const statusBadge = getSiteStatusBadge(site['狀態']);
+                
+                return `
+                    <tr>
+                        <td><strong>${site['場地名稱']}</strong></td>
+                        <td>${site['地址']}</td>
+                        <td>${site['坪數']} 坪</td>
+                        <td>$${parseInt(site['租金']).toLocaleString()}</td>
+                        <td>${site['屋主']}</td>
+                        <td><a href="tel:${site['聯絡電話']}">${site['聯絡電話']}</a></td>
+                        <td>${statusBadge}</td>
+                        <td>${site['負責人']}</td>
+                        <td>${site['開發日期']}</td>
+                    </tr>
+                `;
+            }).join('');
+            
+            tbody.innerHTML = html;
+        }
+
+        // 渲染待辦事項表格
+        function renderTasksTable(tasks) {
+            const tbody = document.getElementById('tasksTableBody');
+            const today = new Date();
+            
+            const html = tasks.map(task => {
+                const deadline = new Date(task['期限']);
+                const isOverdue = deadline < today && task['狀態'] !== '已完成';
+                const taskStatusBadge = getTaskStatusBadge(task['狀態'], isOverdue);
+                const priorityBadge = getPriorityBadge(task['優先級']);
+                
+                return `
+                    <tr data-task-status="${task['狀態']}" ${isOverdue ? 'class="table-danger"' : ''}>
+                        <td><strong>${task['任務名稱']}</strong></td>
+                        <td><span class="badge bg-secondary">${task['類型']}</span></td>
+                        <td>${task['關聯店家/客戶']}</td>
+                        <td>${task['負責人']}</td>
+                        <td>${task['期限']}${isOverdue ? ' <span class="badge bg-danger">逾期</span>' : ''}</td>
+                        <td>${taskStatusBadge}</td>
+                        <td>${priorityBadge}</td>
+                        <td>${task['備註']}</td>
+                    </tr>
+                `;
+            }).join('');
+            
+            tbody.innerHTML = html;
+        }
+
+        // 狀態 Badge
+        function getStatusBadge(status) {
+            const badges = {
+                '營運中': '<span class="badge bg-success">營運中</span>',
+                '籌備中': '<span class="badge bg-warning">籌備中</span>',
+                '已簽約': '<span class="badge bg-info">已簽約</span>'
+            };
+            return badges[status] || `<span class="badge bg-secondary">${status}</span>`;
+        }
+
+        // 階段 Badge
+        function getStageBadge(stage) {
+            const badges = {
+                '接近成交': '<span class="badge bg-danger">🔥 接近成交</span>',
+                '有意願': '<span class="badge bg-warning">💡 有意願</span>',
+                '新詢問': '<span class="badge bg-info">🆕 新詢問</span>',
+                '已簽約': '<span class="badge bg-success">✅ 已簽約</span>',
+                '已放棄': '<span class="badge bg-secondary">❌ 已放棄</span>'
+            };
+            return badges[stage] || `<span class="badge bg-secondary">${stage}</span>`;
+        }
+
+        // 場地狀態 Badge
+        function getSiteStatusBadge(status) {
+            const badges = {
+                '新開發': '<span class="badge bg-info">新開發</span>',
+                '評估中': '<span class="badge bg-warning">評估中</span>',
+                '已確認': '<span class="badge bg-success">已確認</span>',
+                '已放棄': '<span class="badge bg-secondary">已放棄</span>'
+            };
+            return badges[status] || `<span class="badge bg-secondary">${status}</span>`;
+        }
+
+        // 任務狀態 Badge
+        function getTaskStatusBadge(status, isOverdue) {
+            if (isOverdue) {
+                return '<span class="badge bg-danger">⚠️ 逾期</span>';
+            }
+            const badges = {
+                '待處理': '<span class="badge bg-danger">待處理</span>',
+                '進行中': '<span class="badge bg-warning">進行中</span>',
+                '已完成': '<span class="badge bg-success">已完成</span>'
+            };
+            return badges[status] || `<span class="badge bg-secondary">${status}</span>`;
+        }
+
+        // 優先級 Badge
+        function getPriorityBadge(priority) {
+            const badges = {
+                '高': '<span class="badge bg-danger">高</span>',
+                '中': '<span class="badge bg-warning">中</span>',
+                '低': '<span class="badge bg-success">低</span>'
+            };
+            return badges[priority] || '-';
+        }
+
+        // 設定篩選功能
+        function setupFilters(stores, customers, tasks) {
+            // 店家篩選
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active', 'btn-primary'));
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.add('btn-outline-primary'));
+                    btn.classList.add('active', 'btn-primary');
+                    btn.classList.remove('btn-outline-primary');
+                    
+                    const filter = btn.dataset.filter;
+                    const rows = document.querySelectorAll('#storesTable tbody tr');
+                    rows.forEach(row => {
+                        if (filter === 'all' || row.dataset.status === filter) {
+                            row.style.display = '';
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    });
+                });
+            });
+
+            // 客戶篩選
+            document.querySelectorAll('.customer-filter-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.customer-filter-btn').forEach(b => b.classList.remove('active', 'btn-primary'));
+                    document.querySelectorAll('.customer-filter-btn').forEach(b => b.classList.add('btn-outline-primary'));
+                    btn.classList.add('active', 'btn-primary');
+                    btn.classList.remove('btn-outline-primary');
+                    
+                    const filter = btn.dataset.filter;
+                    const rows = document.querySelectorAll('#customersTable tbody tr');
+                    rows.forEach(row => {
+                        if (filter === 'all' || row.dataset.stage === filter) {
+                            row.style.display = '';
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    });
+                });
+            });
+
+            // 任務篩選
+            document.querySelectorAll('.task-filter-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.task-filter-btn').forEach(b => b.classList.remove('active', 'btn-primary', 'btn-outline-primary', 'btn-outline-danger', 'btn-outline-warning', 'btn-outline-success'));
+                    
+                    const filter = btn.dataset.filter;
+                    if (filter === 'all') {
+                        btn.classList.add('btn-primary');
+                    } else if (filter === '待處理') {
+                        btn.classList.add('btn-danger');
+                    } else if (filter === '進行中') {
+                        btn.classList.add('btn-warning');
+                    } else if (filter === '已完成') {
+                        btn.classList.add('btn-success');
+                    }
+                    
+                    const rows = document.querySelectorAll('#tasksTable tbody tr');
+                    rows.forEach(row => {
+                        if (filter === 'all' || row.dataset.taskStatus === filter) {
+                            row.style.display = '';
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    });
+                });
+            });
         }
 
         // 載入資料
