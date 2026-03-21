@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ONE桌遊營運管理儀表板</title>
+    
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        :root {
+            --primary-color: #1E3A8A;
+            --success-color: #10B981;
+            --warning-color: #F59E0B;
+            --danger-color: #EF4444;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", sans-serif;
+            background: #F3F4F6;
+            padding-bottom: 60px;
+        }
+        
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #3B82F6 100%);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .logo {
+            height: 40px;
+            border-radius: 50%;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+            transition: transform 0.2s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            color: #6B7280;
+            font-size: 0.95em;
+        }
+        
+        .progress-item {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+        }
+        
+        .progress-bar-custom {
+            height: 10px;
+            border-radius: 5px;
+        }
+        
+        .alert-item {
+            background: #FEF2F2;
+            border-left: 4px solid var(--danger-color);
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .badge-status {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+        
+        .section-title {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid var(--primary-color);
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-dark sticky-top">
+        <div class="container-fluid">
+            <a class="navbar-brand d-flex align-items-center" href="#">
+                <img src="https://ken0900101318-beep.github.io/one-management-portal/one-logo.jpg" alt="ONE桌遊" class="logo me-2">
+                <span class="fw-bold">ONE桌遊營運管理儀表板</span>
+            </a>
+            <span class="text-white" id="currentDate"></span>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <!-- Loading -->
+        <div id="loading" class="loading">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">載入中...</span>
+            </div>
+            <p class="mt-3 text-muted">正在載入資料...</p>
+        </div>
+
+        <!-- Dashboard Content -->
+        <div id="dashboard" style="display: none;">
+            <!-- 年度/月度目標 -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h2 class="section-title">📊 年度 & 月度目標達成</h2>
+                </div>
+                <div class="col-md-6">
+                    <div class="stat-card">
+                        <h5 class="mb-3"><i class="fas fa-bullseye text-primary"></i> 年度目標</h5>
+                        <div id="yearlyGoals"></div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="stat-card">
+                        <h5 class="mb-3"><i class="fas fa-calendar-alt text-primary"></i> 本月目標</h5>
+                        <div id="monthlyGoals"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 快速數字 -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h2 class="section-title">⚡ 快速數字</h2>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="stat-card text-center" style="border-top: 4px solid #10B981;">
+                        <div class="stat-number text-success" id="newSignCount">0</div>
+                        <div class="stat-label">本月新簽</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="stat-card text-center" style="border-top: 4px solid #F59E0B;">
+                        <div class="stat-number text-warning" id="preparingCount">0</div>
+                        <div class="stat-label">籌備中</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="stat-card text-center" style="border-top: 4px solid #3B82F6;">
+                        <div class="stat-number text-primary" id="operatingCount">0</div>
+                        <div class="stat-label">營運中</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="stat-card text-center" style="border-top: 4px solid #EF4444;">
+                        <div class="stat-number text-danger" id="overdueCount">0</div>
+                        <div class="stat-label">逾期任務</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 銷售漏斗 -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="stat-card">
+                        <h5 class="mb-3"><i class="fas fa-filter text-primary"></i> 銷售漏斗</h5>
+                        <div id="salesFunnel"></div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="stat-card">
+                        <h5 class="mb-3"><i class="fas fa-chart-pie text-primary"></i> 品牌分布</h5>
+                        <canvas id="brandChart" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 籌備中店家進度 -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h2 class="section-title">🏗️ 籌備中店家進度</h2>
+                    <div class="stat-card">
+                        <div id="preparingStores"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 逾期任務警示 -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h2 class="section-title">⚠️ 逾期任務警示</h2>
+                    <div class="stat-card">
+                        <div id="overdueTasks"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 近期新簽店家 -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h2 class="section-title">🎉 本月新簽店家</h2>
+                    <div class="stat-card">
+                        <div id="newStores"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Google Sheets ID
+        const SHEET_ID = '1xdk3LthylIA6cACvW3RgwcLUcUpQd1XiXMbz_Y26ZBU';
+        const API_KEY = 'AIzaSyDqTJPRqC8oBiEfEb-sNr9h5GjJ3fYQjZc'; // 公開的 API Key
+        
+        // 顯示當前日期
+        document.getElementById('currentDate').textContent = new Date().toLocaleDateString('zh-TW', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            weekday: 'long'
+        });
+
+        // 載入資料
+        async function loadData() {
+            try {
+                // 載入所有工作表
+                const [goals, customers, stores, sites, tasks] = await Promise.all([
+                    fetchSheet('目標追蹤'),
+                    fetchSheet('潛在客戶'),
+                    fetchSheet('已簽約店家'),
+                    fetchSheet('場地開發'),
+                    fetchSheet('待辦事項')
+                ]);
+
+                // 渲染各區塊
+                renderGoals(goals);
+                renderQuickStats(customers, stores, tasks);
+                renderSalesFunnel(customers);
+                renderBrandChart(stores);
+                renderPreparingStores(stores);
+                renderOverdueTasks(tasks);
+                renderNewStores(stores);
+
+                // 顯示儀表板
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'block';
+            } catch (error) {
+                console.error('載入資料失敗:', error);
+                document.getElementById('loading').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle"></i> 
+                        載入資料失敗，請確認 Google Sheets 已設定為公開存取
+                    </div>
+                `;
+            }
+        }
+
+        // 從 Google Sheets 讀取資料
+        async function fetchSheet(sheetName) {
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(sheetName)}?key=${API_KEY}`;
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            if (!data.values || data.values.length === 0) {
+                return [];
+            }
+
+            // 轉換為物件陣列
+            const headers = data.values[0];
+            return data.values.slice(1).map(row => {
+                const obj = {};
+                headers.forEach((header, index) => {
+                    obj[header] = row[index] || '';
+                });
+                return obj;
+            });
+        }
+
+        // 渲染年度/月度目標
+        function renderGoals(goals) {
+            const yearlyHTML = goals.map(goal => `
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="fw-bold">${goal['項目']}</span>
+                        <span class="text-primary fw-bold">${Math.round(parseFloat(goal['達成率']) * 100)}%</span>
+                    </div>
+                    <div class="progress" style="height: 20px;">
+                        <div class="progress-bar ${getProgressColor(parseFloat(goal['達成率']))}" 
+                             style="width: ${parseFloat(goal['達成率']) * 100}%">
+                            ${goal['已達成']} / ${goal['年度目標']}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            const monthlyHTML = goals.map(goal => `
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="fw-bold">${goal['項目']}</span>
+                        <span class="text-primary fw-bold">${Math.round(parseFloat(goal['月達成率']) * 100)}%</span>
+                    </div>
+                    <div class="progress" style="height: 20px;">
+                        <div class="progress-bar ${getProgressColor(parseFloat(goal['月達成率']))}" 
+                             style="width: ${parseFloat(goal['月達成率']) * 100}%">
+                            ${goal['本月達成']} / ${goal['月度目標']}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('yearlyGoals').innerHTML = yearlyHTML;
+            document.getElementById('monthlyGoals').innerHTML = monthlyHTML;
+        }
+
+        // 渲染快速數字
+        function renderQuickStats(customers, stores, tasks) {
+            const today = new Date();
+            const thisMonth = today.getMonth();
+            
+            // 本月新簽
+            const newSignCount = stores.filter(store => {
+                const signDate = new Date(store['簽約日']);
+                return signDate.getMonth() === thisMonth;
+            }).length;
+
+            // 籌備中
+            const preparingCount = stores.filter(s => s['狀態'] === '籌備中').length;
+
+            // 營運中
+            const operatingCount = stores.filter(s => s['狀態'] === '營運中').length;
+
+            // 逾期任務
+            const overdueCount = tasks.filter(task => {
+                if (task['狀態'] === '已完成') return false;
+                const deadline = new Date(task['期限']);
+                return deadline < today;
+            }).length;
+
+            document.getElementById('newSignCount').textContent = newSignCount;
+            document.getElementById('preparingCount').textContent = preparingCount;
+            document.getElementById('operatingCount').textContent = operatingCount;
+            document.getElementById('overdueCount').textContent = overdueCount;
+        }
+
+        // 渲染銷售漏斗
+        function renderSalesFunnel(customers) {
+            const stages = {
+                '新詢問': customers.filter(c => c['階段'] === '新詢問').length,
+                '有意願': customers.filter(c => c['階段'] === '有意願').length,
+                '接近成交': customers.filter(c => c['階段'] === '接近成交').length
+            };
+
+            const html = Object.entries(stages).map(([stage, count]) => `
+                <div class="d-flex justify-content-between align-items-center mb-2 p-2 rounded" style="background: #F3F4F6;">
+                    <span class="fw-bold">${stage}</span>
+                    <span class="badge bg-primary">${count} 人</span>
+                </div>
+            `).join('');
+
+            document.getElementById('salesFunnel').innerHTML = html + `
+                <div class="mt-3 p-3 rounded" style="background: #FEF3C7; border-left: 4px solid #F59E0B;">
+                    <strong>本月預估成交：</strong> ${stages['接近成交']} - ${stages['接近成交'] + 1} 家
+                </div>
+            `;
+        }
+
+        // 渲染品牌圖表
+        function renderBrandChart(stores) {
+            const brands = {};
+            stores.forEach(store => {
+                brands[store['品牌']] = (brands[store['品牌']] || 0) + 1;
+            });
+
+            const ctx = document.getElementById('brandChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(brands),
+                    datasets: [{
+                        data: Object.values(brands),
+                        backgroundColor: ['#3B82F6', '#10B981', '#F59E0B']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        // 渲染籌備中店家
+        function renderPreparingStores(stores) {
+            const preparing = stores.filter(s => s['狀態'] === '籌備中')
+                .sort((a, b) => parseFloat(b['進度%']) - parseFloat(a['進度%']));
+
+            if (preparing.length === 0) {
+                document.getElementById('preparingStores').innerHTML = '<p class="text-muted">目前沒有籌備中的店家</p>';
+                return;
+            }
+
+            const html = preparing.map(store => `
+                <div class="progress-item">
+                    <div class="d-flex justify-content-between mb-2">
+                        <div>
+                            <strong>${store['店名']}</strong>
+                            <span class="badge bg-secondary ms-2">${store['階段']}</span>
+                        </div>
+                        <span class="text-primary fw-bold">${store['進度%']}%</span>
+                    </div>
+                    <div class="progress progress-bar-custom">
+                        <div class="progress-bar ${getProgressColor(parseFloat(store['進度%']) / 100)}" 
+                             style="width: ${store['進度%']}%"></div>
+                    </div>
+                    <div class="mt-2 small text-muted">
+                        <i class="fas fa-user"></i> ${store['負責人']} | 
+                        <i class="fas fa-calendar"></i> 預計開幕：${store['預計開幕日']}
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('preparingStores').innerHTML = html;
+        }
+
+        // 渲染逾期任務
+        function renderOverdueTasks(tasks) {
+            const today = new Date();
+            const overdue = tasks.filter(task => {
+                if (task['狀態'] === '已完成') return false;
+                const deadline = new Date(task['期限']);
+                return deadline < today;
+            });
+
+            if (overdue.length === 0) {
+                document.getElementById('overdueTasks').innerHTML = '<p class="text-success"><i class="fas fa-check-circle"></i> 太棒了！目前沒有逾期任務</p>';
+                return;
+            }
+
+            const html = overdue.map(task => {
+                const deadline = new Date(task['期限']);
+                const daysOverdue = Math.floor((today - deadline) / (1000 * 60 * 60 * 24));
+                
+                return `
+                    <div class="alert-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <strong>${task['任務名稱']}</strong>
+                                <div class="small text-muted mt-1">
+                                    <i class="fas fa-user"></i> ${task['負責人']} | 
+                                    <i class="fas fa-calendar"></i> 期限：${task['期限']}
+                                </div>
+                            </div>
+                            <span class="badge bg-danger">逾期 ${daysOverdue} 天</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('overdueTasks').innerHTML = html;
+        }
+
+        // 渲染本月新簽店家
+        function renderNewStores(stores) {
+            const today = new Date();
+            const thisMonth = today.getMonth();
+            
+            const newStores = stores.filter(store => {
+                const signDate = new Date(store['簽約日']);
+                return signDate.getMonth() === thisMonth;
+            }).sort((a, b) => new Date(b['簽約日']) - new Date(a['簽約日']));
+
+            if (newStores.length === 0) {
+                document.getElementById('newStores').innerHTML = '<p class="text-muted">本月尚無新簽店家</p>';
+                return;
+            }
+
+            const html = newStores.map(store => `
+                <div class="d-flex justify-content-between align-items-center p-3 mb-2 rounded" style="background: #F0FDF4; border-left: 4px solid #10B981;">
+                    <div>
+                        <strong>${store['店名']}</strong>
+                        <span class="badge bg-success ms-2">${store['品牌']}</span>
+                        <div class="small text-muted mt-1">
+                            <i class="fas fa-user"></i> ${store['負責人']} | 
+                            <i class="fas fa-map-marker-alt"></i> ${store['地址']}
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <div class="small text-muted">簽約日期</div>
+                        <strong>${store['簽約日']}</strong>
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('newStores').innerHTML = html;
+        }
+
+        // 工具函數：根據進度取得顏色
+        function getProgressColor(progress) {
+            if (progress >= 0.8) return 'bg-success';
+            if (progress >= 0.5) return 'bg-warning';
+            return 'bg-danger';
+        }
+
+        // 載入資料
+        loadData();
+
+        // 每 5 分鐘自動重新整理
+        setInterval(loadData, 5 * 60 * 1000);
+    </script>
+</body>
+</html>
