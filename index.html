@@ -231,9 +231,17 @@
     </div>
 
     <script>
-        // Google Sheets ID
-        const SHEET_ID = '1xdk3LthylIA6cACvW3RgwcLUcUpQd1XiXMbz_Y26ZBU';
-        const API_KEY = 'AIzaSyDqTJPRqC8oBiEfEb-sNr9h5GjJ3fYQjZc'; // 公開的 API Key
+        // Google Sheets 發布網址
+        const PUBLISHED_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ9aTAthp6AUZdjSiV6JJWB-dzy3UZjdmLpT9BSJo5KHtiqRmcRCWFugywcDBqQDhWRZFPJobwJBsc1/pub';
+        
+        // 工作表 GID
+        const SHEET_GIDS = {
+            '目標追蹤': '11188279',
+            '潛在客戶': '0',
+            '已簽約店家': '960423965',
+            '場地開發': '1830817694',
+            '待辦事項': '712507311'
+        };
         
         // 顯示當前日期
         document.getElementById('currentDate').textContent = new Date().toLocaleDateString('zh-TW', {
@@ -278,25 +286,43 @@
             }
         }
 
-        // 從 Google Sheets 讀取資料
+        // 從 Google Sheets 讀取資料（使用 CSV 格式）
         async function fetchSheet(sheetName) {
-            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(sheetName)}?key=${API_KEY}`;
-            const response = await fetch(url);
-            const data = await response.json();
-            
-            if (!data.values || data.values.length === 0) {
+            const gid = SHEET_GIDS[sheetName];
+            if (!gid && gid !== '0') {
+                console.error('找不到工作表 GID:', sheetName);
                 return [];
             }
-
-            // 轉換為物件陣列
-            const headers = data.values[0];
-            return data.values.slice(1).map(row => {
-                const obj = {};
-                headers.forEach((header, index) => {
-                    obj[header] = row[index] || '';
+            
+            const url = `${PUBLISHED_URL}?gid=${gid}&single=true&output=csv`;
+            
+            try {
+                const response = await fetch(url);
+                const csvText = await response.text();
+                
+                // 解析 CSV
+                const rows = csvText.split('\n').map(row => {
+                    // 簡單的 CSV 解析（處理逗號和引號）
+                    return row.split(',').map(cell => cell.trim().replace(/^"|"$/g, ''));
                 });
-                return obj;
-            });
+                
+                if (rows.length === 0) {
+                    return [];
+                }
+                
+                // 轉換為物件陣列
+                const headers = rows[0];
+                return rows.slice(1).filter(row => row.length > 1 && row[0]).map(row => {
+                    const obj = {};
+                    headers.forEach((header, index) => {
+                        obj[header] = row[index] || '';
+                    });
+                    return obj;
+                });
+            } catch (error) {
+                console.error('讀取資料失敗:', sheetName, error);
+                return [];
+            }
         }
 
         // 渲染年度/月度目標
