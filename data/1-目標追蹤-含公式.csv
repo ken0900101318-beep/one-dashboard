@@ -1,0 +1,4 @@
+項目,年度目標,已達成,達成率,月度目標,本月達成,月達成率
+新簽約店家,50,=COUNTA(已簽約店家!A2:A),=C2/B2,4,=COUNTIFS(已簽約店家!J2:J;">="&DATE(YEAR(TODAY());MONTH(TODAY());1);已簽約店家!J2:J;"<"&DATE(YEAR(TODAY());MONTH(TODAY())+1;1)),=F2/E2
+場地開發,20,=COUNTIF(場地開發!H2:H;"已確認"),=C3/B3,2,=COUNTIFS(場地開發!J2:J;">="&DATE(YEAR(TODAY());MONTH(TODAY());1);場地開發!J2:J;"<"&DATE(YEAR(TODAY());MONTH(TODAY())+1;1);場地開發!H2:H;"已確認"),=F3/E3
+開幕店家,40,=COUNTIF(已簽約店家!F2:F;"營運中"),=C4/B4,3,=COUNTIFS(已簽約店家!K2:K;">="&DATE(YEAR(TODAY());MONTH(TODAY());1);已簽約店家!F2:F;"營運中"),=F4/E4
