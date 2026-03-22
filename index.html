@@ -269,9 +269,10 @@
                     <div class="stat-card">
                         <div class="mb-3">
                             <button class="btn btn-primary btn-sm me-2 customer-filter-btn active" data-filter="all">全部</button>
-                            <button class="btn btn-outline-primary btn-sm me-2 customer-filter-btn" data-filter="接近成交">接近成交</button>
-                            <button class="btn btn-outline-primary btn-sm me-2 customer-filter-btn" data-filter="有意願">有意願</button>
-                            <button class="btn btn-outline-primary btn-sm customer-filter-btn" data-filter="新詢問">新詢問</button>
+                            <button class="btn btn-outline-success btn-sm me-2 customer-filter-btn" data-filter="找好場地，接近成交">接近成交</button>
+                            <button class="btn btn-outline-info btn-sm me-2 customer-filter-btn" data-filter="有意願，尋找場地中">有意願</button>
+                            <button class="btn btn-outline-warning btn-sm me-2 customer-filter-btn" data-filter="初次聯繫">初次聯繫</button>
+                            <button class="btn btn-outline-danger btn-sm customer-filter-btn" data-filter="未聯繫上">未聯繫上</button>
                         </div>
                         <div class="table-responsive">
                             <table class="table table-hover" id="customersTable">
@@ -527,24 +528,67 @@
 
         // 渲染銷售漏斗
         function renderSalesFunnel(customers) {
+            const today = new Date();
+            const oneMonthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+            
+            // 計算新/舊客戶
+            const newCustomers = customers.filter(c => {
+                if (c['階段'] === '已簽約' || c['階段'] === '已放棄') return false;
+                const lastContact = new Date(c['最後聯絡日']);
+                return lastContact >= oneMonthAgo;
+            }).length;
+            
+            const oldCustomers = customers.filter(c => {
+                if (c['階段'] === '已簽約' || c['階段'] === '已放棄') return false;
+                const lastContact = new Date(c['最後聯絡日']);
+                return lastContact < oneMonthAgo;
+            }).length;
+            
+            // 計算各階段人數
             const stages = {
-                '新詢問': customers.filter(c => c['階段'] === '新詢問').length,
-                '有意願': customers.filter(c => c['階段'] === '有意願').length,
-                '接近成交': customers.filter(c => c['階段'] === '接近成交').length
+                '未聯繫上': customers.filter(c => c['階段'] === '未聯繫上').length,
+                '初次聯繫': customers.filter(c => c['階段'] === '初次聯繫').length,
+                '有意願，尋找場地中': customers.filter(c => c['階段'] === '有意願，尋找場地中' || c['階段'] === '有意願').length,
+                '找好場地，接近成交': customers.filter(c => c['階段'] === '找好場地，接近成交' || c['階段'] === '接近成交').length
             };
 
-            const html = Object.entries(stages).map(([stage, count]) => `
-                <div class="d-flex justify-content-between align-items-center mb-2 p-2 rounded" style="background: #F3F4F6;">
-                    <span class="fw-bold">${stage}</span>
-                    <span class="badge bg-primary">${count} 人</span>
+            const html = `
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <div class="text-center p-3 rounded" style="background: #DBEAFE; border: 2px solid #3B82F6;">
+                            <div class="h2 text-primary mb-1">${newCustomers}</div>
+                            <div class="small">🆕 新客戶<br>(30天內)</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-center p-3 rounded" style="background: #F3F4F6; border: 2px solid #9CA3AF;">
+                            <div class="h2 text-secondary mb-1">${oldCustomers}</div>
+                            <div class="small">📋 舊客戶<br>(超過30天)</div>
+                        </div>
+                    </div>
                 </div>
-            `).join('');
-
-            document.getElementById('salesFunnel').innerHTML = html + `
-                <div class="mt-3 p-3 rounded" style="background: #FEF3C7; border-left: 4px solid #F59E0B;">
-                    <strong>本月預估成交：</strong> ${stages['接近成交']} - ${stages['接近成交'] + 1} 家
+                ${Object.entries(stages).map(([stage, count]) => {
+                    const colors = {
+                        '未聯繫上': '#EF4444',
+                        '初次聯繫': '#F59E0B',
+                        '有意願，尋找場地中': '#3B82F6',
+                        '找好場地，接近成交': '#10B981'
+                    };
+                    const color = colors[stage] || '#6B7280';
+                    
+                    return `
+                        <div class="d-flex justify-content-between align-items-center mb-2 p-2 rounded" style="background: #F3F4F6; border-left: 4px solid ${color};">
+                            <span class="fw-bold">${stage}</span>
+                            <span class="badge" style="background: ${color}">${count} 人</span>
+                        </div>
+                    `;
+                }).join('')}
+                <div class="mt-3 p-3 rounded" style="background: #D1FAE5; border-left: 4px solid #10B981;">
+                    <strong>🎯 預估本月成交：</strong> ${stages['找好場地，接近成交']} 家
                 </div>
             `;
+
+            document.getElementById('salesFunnel').innerHTML = html;
         }
 
         // 渲染品牌圖表
@@ -826,9 +870,13 @@
         // 階段 Badge
         function getStageBadge(stage) {
             const badges = {
-                '接近成交': '<span class="badge bg-danger">🔥 接近成交</span>',
-                '有意願': '<span class="badge bg-warning">💡 有意願</span>',
-                '新詢問': '<span class="badge bg-info">🆕 新詢問</span>',
+                '找好場地，接近成交': '<span class="badge bg-success">🔥 接近成交</span>',
+                '接近成交': '<span class="badge bg-success">🔥 接近成交</span>',  // 舊資料相容
+                '有意願，尋找場地中': '<span class="badge bg-info">💡 尋找場地中</span>',
+                '有意願': '<span class="badge bg-info">💡 尋找場地中</span>',  // 舊資料相容
+                '初次聯繫': '<span class="badge bg-warning">📞 初次聯繫</span>',
+                '未聯繫上': '<span class="badge bg-danger">⏳ 未聯繫上</span>',
+                '新詢問': '<span class="badge bg-secondary">🆕 新詢問</span>',  // 舊資料相容
                 '已簽約': '<span class="badge bg-success">✅ 已簽約</span>',
                 '已放棄': '<span class="badge bg-secondary">❌ 已放棄</span>'
             };
